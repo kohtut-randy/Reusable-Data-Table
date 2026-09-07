@@ -77,11 +77,28 @@ export const useFetchQuery = <TData>({
   const requestId = useRef(0)
   const [nonce, bump] = useReducer((value: number) => value + 1, 0)
 
+  /* Strict Mode's dev-only mount → cleanup → mount replay would otherwise fire the
+     fetch twice per real mount, aborting the first as visible request failure in
+     the network panel. The cleanup defers its abort by a tick instead of firing it
+     immediately, so the very next effect run can reclaim the same in-flight request
+     for the same key rather than starting a duplicate. A genuine key change or
+     unmount is unaffected: nothing reclaims the pending abort, so it still fires. */
+  const pendingAbort = useRef<{ key: string; controller: AbortController; timer: ReturnType<typeof setTimeout> } | null>(null)
+
   // One job: run the request for the current key, and cancel it if the key changes.
   useEffect(() => {
     if (!enabled) {
       dispatch({ type: 'DISABLED' })
       return
+    }
+
+    const reclaimed = pendingAbort.current
+    if (reclaimed && reclaimed.key === key) {
+      clearTimeout(reclaimed.timer)
+      pendingAbort.current = null
+      return () => {
+        pendingAbort.current = { key, controller: reclaimed.controller, timer: setTimeout(() => reclaimed.controller.abort(), 0) }
+      }
     }
 
     const controller = new AbortController()
@@ -103,7 +120,9 @@ export const useFetchQuery = <TData>({
         dispatch({ type: 'ERROR', error: error instanceof Error ? error : new Error(String(error)) })
       })
 
-    return () => controller.abort()
+    return () => {
+      pendingAbort.current = { key, controller, timer: setTimeout(() => controller.abort(), 0) }
+    }
   }, [key, enabled, keepPreviousData, nonce, run])
 
   const refetch = useCallback(() => bump(), [])
