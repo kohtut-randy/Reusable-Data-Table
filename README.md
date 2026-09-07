@@ -32,19 +32,6 @@ list) is reachable from the ***Simulate states*** popover, so none needs DevTool
 switch changes what the mock API returns, so the state on screen is a real response.
 `?sortBy=bogus` and `?page=999` are handled at both ends.
 
-## Reduced motion
-
-Motion mode is set on `<html data-motion-mode>` in `_document` before the first paint, and
-both stylesheets key off that attribute.
-
-**For this demo the OS `prefers-reduced-motion` setting is intentionally ignored**, because
-the expand/collapse transition and the shimmer are assessed features and a reviewer with the
-flag on would never see them. `?motion=reduce` opts into the reduced build, which is fully
-implemented: `base.css` collapses every animation and transition, `dataTable.css` drops the
-detail-grid transition to 1ms, stops the shimmer, and removes row and sticky-cell
-transitions. Behaviour never changes, only motion. Honouring the OS preference is a one-line
-change in `_document`.
-
 ## `DataTable` API
 
 Single column type in `DataTable.types.ts`:
@@ -90,6 +77,19 @@ Cell render precedence: `renderCell` → `valueFormatter` → `String(row[field]
   global store or context is used.
 - **`DataTable/` has no dependency on the rest of the app** (no `services/`, `pages/`,
   `server/`, or `next/` imports), enforced by an ESLint rule.
+
+## Reduced motion
+
+Motion mode is set on `<html data-motion-mode>` in `_document` before the first paint, and
+both stylesheets key off that attribute.
+
+**For this demo the OS `prefers-reduced-motion` setting is intentionally ignored**, because
+the expand/collapse transition and the shimmer are assessed features and a reviewer with the
+flag on would never see them. `?motion=reduce` opts into the reduced build, which is fully
+implemented: `base.css` collapses every animation and transition, `dataTable.css` drops the
+detail-grid transition to 1ms, stops the shimmer, and removes row and sticky-cell
+transitions. Behaviour never changes, only motion. Honouring the OS preference is a one-line
+change in `_document`.
 
 ## Accessibility & performance
 
