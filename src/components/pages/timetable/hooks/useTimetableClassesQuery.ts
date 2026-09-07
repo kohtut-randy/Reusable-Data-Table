@@ -38,7 +38,8 @@ export const useTimetableClassesQuery = ({ date, flags }: UseTimetableClassesQue
              returns the COMPLETE working set for the day. */
           page: 1,
           pageSize: MAX_API_PAGE_SIZE,
-          // Attendees are fetched on demand per row, not inlined with the list.
+          // Inline children: one request carries the attendees with their parents.
+          includeAttendees: true,
           delay: flags.slow ? flags.delayMs : undefined,
           fail: flags.failList,
           empty: flags.emptyList,

@@ -6,15 +6,14 @@ import { MoreSVG, SearchSVG } from 'icons'
 import { TimetableAttendeeList } from './TimetableAttendeeList'
 import { TimetableSimulateStates } from './TimetableSimulateStates'
 import { TimetableStats } from './TimetableStats'
-import { useTimetableAttendeesFetcher, useTimetableClassesQuery } from '../hooks'
+import { useTimetableClassesQuery } from '../hooks'
 import { createTimetableColumns } from '../utils/timetableColumns'
 import { TIMETABLE_CAPTION, TIMETABLE_DEFAULT_PAGE_SIZE, TIMETABLE_NOUN, TIMETABLE_ROW_HEIGHT_PX } from '../constants'
 import type { AttendeeDTO, ClassDTO, ClassStatus, TimetableTestFlags } from '../timetable.types'
 
 /* The business component: it owns this page's state and wiring, and is the only thing
-   that knows both "class" and "DataTable". Client sort and client pagination come from
-   one `/api/classes` request; attendees are fetched on demand, one row at a time, from
-   `/api/classes/:classId/attendees` when a row is expanded. */
+   that knows both "class" and "DataTable". Client sort, client pagination and inline
+   children, all from one `/api/classes?include=attendees` request. */
 
 const DEFAULT_FLAGS: TimetableTestFlags = {
   slow: false,
@@ -50,7 +49,6 @@ export const TimetableClassesCard = ({ date }: TimetableClassesCardProps) => {
   const [statusOverrides, setStatusOverrides] = useState<ReadonlyMap<string, ClassStatus>>(new Map())
 
   const { response, isLoading, isFetching, error, refetch } = useTimetableClassesQuery({ date, flags })
-  const fetchAttendees = useTimetableAttendeesFetcher(flags)
 
   /* useDeferredValue so filtering never blocks a keystroke. The filter runs over the
      fetched day, so typing does not refetch. */
@@ -190,14 +188,13 @@ export const TimetableClassesCard = ({ date }: TimetableClassesCardProps) => {
           pagination={page}
           onPageChange={setPage}
           expansion={{
-            mode: 'lazy',
-            // On-demand children: one request per row, made the first time it's expanded.
-            fetchChildren: fetchAttendees,
+            mode: 'inline',
+            // Inline children arrived with the parents in the same request.
+            getChildren: row => row.attendees,
             getRowLabel: row => row.name,
             expandedRowIds,
             onExpandedChange: setExpandedRowIds,
             renderContent: ({ row, children }) => <TimetableAttendeeList attendees={children} className={row.name} />,
-            // Loading and error states fall back to the table's default renderers.
             renderEmpty: ({ row }) => <p className='px-4 py-3.5 text-[0.8125rem] text-ink-subtle'>No bookings yet for {row.name}.</p>,
           }}
         />
