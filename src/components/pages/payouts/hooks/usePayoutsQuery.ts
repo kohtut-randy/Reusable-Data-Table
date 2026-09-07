@@ -74,7 +74,12 @@ export const usePayoutsQuery = ({ page, sort, search, flags, initialData }: UseP
       ),
   })
 
-  const response = isInitialKey ? initialData : query.data
+  /* Falls back to `initialData` while the first post-SSR request is in flight, since
+     `query.data` is still undefined at that point (the initial key's request was
+     skipped). Without this, `rowCount` drops to 0 for a render, `usePagination` clamps
+     the just-requested page back to 0, and the in-flight request is aborted with
+     nothing to replace it. */
+  const response = isInitialKey ? initialData : (query.data ?? initialData)
 
   return {
     response,
