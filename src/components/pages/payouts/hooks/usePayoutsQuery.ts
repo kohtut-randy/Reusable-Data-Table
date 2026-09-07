@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react'
-import { useFetchQuery } from 'hooks'
+import { useDebouncedValue, useFetchQuery } from 'hooks'
 import type { PageState, SortState } from 'components/DataTable'
 import { fetchPayouts } from 'services/api'
 import type { PayoutsListResponse } from 'services/api'
@@ -38,9 +38,12 @@ export const usePayoutsQuery = ({ page, sort, search, flags, initialData }: UseP
     [flags.slow, flags.delayMs, flags.failList, flags.emptyList],
   )
 
+  // Debounced so a request fires once typing pauses, not once per keystroke.
+  const debouncedSearch = useDebouncedValue(search, 300)
+
   const key = useMemo(
-    () => JSON.stringify({ page: page.pageIndex, size: page.pageSize, sort, search, flags: listFlags }),
-    [page.pageIndex, page.pageSize, sort, search, listFlags],
+    () => JSON.stringify({ page: page.pageIndex, size: page.pageSize, sort, search: debouncedSearch, flags: listFlags }),
+    [page.pageIndex, page.pageSize, sort, debouncedSearch, listFlags],
   )
 
   /* The flags active when the SSR request was made, frozen at mount: the server render
@@ -79,7 +82,7 @@ export const usePayoutsQuery = ({ page, sort, search, flags, initialData }: UseP
           pageSize: page.pageSize,
           sortBy: sort?.columnId,
           sortDir: sort?.direction,
-          q: search,
+          q: debouncedSearch,
           delay: listFlags.slow ? listFlags.delayMs : undefined,
           fail: listFlags.failList,
           empty: listFlags.emptyList,

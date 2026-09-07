@@ -1,5 +1,6 @@
 export * from './useAnchoredLayer'
 export * from './useCloseOnOutside'
+export * from './useDebouncedValue'
 export * from './useEvent'
 export * from './useMediaQuery'
 export * from './useQuery'

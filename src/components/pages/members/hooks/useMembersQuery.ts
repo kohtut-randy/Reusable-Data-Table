@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useFetchQuery } from 'hooks'
+import { useDebouncedValue, useFetchQuery } from 'hooks'
 import type { PageState, SortState } from 'components/DataTable'
 import { fetchMembers } from 'services/api'
 import type { MembersListResponse } from 'services/api'
@@ -25,9 +25,12 @@ export type UseMembersQueryResult = {
 }
 
 export const useMembersQuery = ({ page, sort, search, flags }: UseMembersQueryOptions): UseMembersQueryResult => {
+  // Debounced so a request fires once typing pauses, not once per keystroke.
+  const debouncedSearch = useDebouncedValue(search, 300)
+
   const key = useMemo(
-    () => JSON.stringify({ page: page.pageIndex, size: page.pageSize, sort, search, flags }),
-    [page.pageIndex, page.pageSize, sort, search, flags],
+    () => JSON.stringify({ page: page.pageIndex, size: page.pageSize, sort, search: debouncedSearch, flags }),
+    [page.pageIndex, page.pageSize, sort, debouncedSearch, flags],
   )
 
   const query = useFetchQuery<MembersListResponse>({
@@ -38,7 +41,7 @@ export const useMembersQuery = ({ page, sort, search, flags }: UseMembersQueryOp
           // 0-based internally, 1-BASED on the wire.
           page: page.pageIndex + 1,
           pageSize: page.pageSize,
-          q: search,
+          q: debouncedSearch,
           delay: flags.slow ? flags.delayMs : undefined,
           fail: flags.failList,
           empty: flags.emptyList,
