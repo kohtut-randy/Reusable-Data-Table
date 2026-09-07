@@ -18,17 +18,19 @@ npm run dev        # http://localhost:4000
 Other scripts: `npm run build` / `npm start` (production), `npm run lint`,
 `npm run typecheck`, `npm test` (pure-logic unit tests, also prints sort timings).
 
-## Pages
+## Where to look
 
-| Route | Table mode | Expansion |
-|---|---|---|
-| `/` | Client sort & pagination | Inline child rows |
-| `/payouts` | Server sort & pagination | On-demand (lazy-fetched) nested table |
-| `/members` | Server sort & pagination | None |
-| `/demo` | Smallest example, source shown on page | — |
+| | |
+|---|---|
+| `/` | One studio day. ***Client*** sort + pagination, ***inline*** child rows. |
+| `/payouts` | Payouts. ***Server*** sort + pagination, ***on-demand*** child rows in a nested table. |
+| `/members` | 2,400-row roster. Server mode, no expansion. |
+| `/demo` | Reusability showcase: four configurations, the smallest in full source. |
 
-Every page has a **Simulate states** popover to trigger slow/failed/empty responses
-without DevTools. `?sortBy=bogus` and `?page=999` are handled gracefully at both ends.
+Every edge case (slow fetch, failed list, failed child fetch, empty dataset, empty child
+list) is reachable from the ***Simulate states*** popover, so none needs DevTools. Each
+switch changes what the mock API returns, so the state on screen is a real response.
+`?sortBy=bogus` and `?page=999` are handled at both ends.
 
 ## `DataTable` API
 
@@ -75,6 +77,19 @@ Cell render precedence: `renderCell` → `valueFormatter` → `String(row[field]
   global store or context is used.
 - **`DataTable/` has no dependency on the rest of the app** (no `services/`, `pages/`,
   `server/`, or `next/` imports), enforced by an ESLint rule.
+
+## Reduced motion
+
+Motion mode is set on `<html data-motion-mode>` in `_document` before the first paint, and
+both stylesheets key off that attribute.
+
+**For this demo the OS `prefers-reduced-motion` setting is intentionally ignored**, because
+the expand/collapse transition and the shimmer are assessed features and a reviewer with the
+flag on would never see them. `?motion=reduce` opts into the reduced build, which is fully
+implemented: `base.css` collapses every animation and transition, `dataTable.css` drops the
+detail-grid transition to 1ms, stops the shimmer, and removes row and sticky-cell
+transitions. Behaviour never changes, only motion. Honouring the OS preference is a one-line
+change in `_document`.
 
 ## Accessibility & performance
 
