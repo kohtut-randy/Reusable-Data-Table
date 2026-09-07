@@ -1,0 +1,357 @@
+/* ══════════════════════════════════════════════════════════════════════════════
+   DataTable stylesheet. Everything here encodes a decision that is easy to get
+   wrong, so each block carries the reason.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1 · THE FOUNDATION, and the border-collapse pitfall ──────────────────────
+   `border-collapse: separate` is mandatory, not stylistic. With `collapse`, borders
+   are owned by the TABLE rather than by the cell, so a sticky cell loses its borders
+   and neighbouring content bleeds through the sticky edge while scrolling. It is also
+   what allows a genuinely zero-height <tr> for a collapsed detail row.
+
+   Consequence: every rule below is drawn as an INSET BOX-SHADOW, which travels with
+   the sticky cell instead of being left behind by it. */
+/* ROW TINTS, defined here and DERIVED FROM THE SEMANTIC TOKENS rather than taken from
+   them directly.
+
+   The reason is a measured collision: in light mode the shared token layer sets
+   `--surface-hover` and `--surface-subtle` to the SAME value (chalk-100), so a
+   zebra-striped row was pixel-identical to a hovered row. Every other row looked
+   permanently hovered, and hovering a striped row did nothing visible.
+
+   Editing the token layer was not an option: it is copied byte-identical into the
+   companion landing-page repo, so a change here would silently diverge the two. Mixing
+   ink into the surface instead keeps both tints keyed to the theme (in dark mode `--ink`
+   is the light chalk, so the same mix lightens rather than darkens) and guarantees
+   hover is always the stronger of the two. */
+.dt-table,
+.dt-scroller {
+  --dt-row-zebra: color-mix(in oklab, var(--ink) 3%, var(--surface-raised));
+  --dt-row-hover: color-mix(in oklab, var(--ink) 7%, var(--surface-raised));
+}
+
+/* THE STICKY LAYER ORDER, defined once.
+   A sticky table has four overlapping planes, and the corner cell (sticky in both axes)
+   has to sit above both. These were previously named constants in TypeScript AND
+   literals in this file, which is two sources of truth for one stacking order. The CSS
+   owns them now, and resolveColumns reads them through var(). */
+.dt-table,
+.dt-scroller {
+  --dt-z-sticky-cell: 10;
+  --dt-z-sticky-header: 20;
+  --dt-z-sticky-corner: 30;
+}
+
+.dt-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.dt-table :where(th, td) {
+  box-shadow: inset 0 -1px 0 var(--border-subtle);
+  padding: 0.625rem 0.875rem;
+  vertical-align: middle;
+  text-align: left;
+}
+
+.dt-table[data-density='compact'] :where(th, td) {
+  padding: 0.4375rem 0.75rem;
+}
+
+/* ── 2 · THE SCROLLER ─────────────────────────────────────────────────────────
+   `overscroll-behavior-x: contain` stops a horizontal swipe at the end of the table
+   from triggering the browser's back-navigation gesture, which is a genuinely
+   destructive accident on a touchpad. */
+.dt-scroller {
+  position: relative;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+/* The IntersectionObserver sentinels. 1px, transparent, and pinned to each edge of
+   the scrollable content. They are never seen; only their intersection matters. */
+.dt-sentinel {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  pointer-events: none;
+}
+.dt-sentinel-start {
+  left: 0;
+}
+.dt-sentinel-end {
+  right: 0;
+}
+
+/* ── 3 · STICKY CELLS ─────────────────────────────────────────────────────────
+   Sticky goes on `th`/`td`, NEVER on `tr` or `thead`: a sticky row is not a thing
+   the spec supports usefully, and browsers disagree about it.
+
+   A sticky cell is transparent by default, so it MUST paint an opaque background or
+   the scrolling content shows straight through it. That in turn means hover and zebra
+   have to be re-applied to sticky cells: a background on the <tr> will not show
+   through a cell that paints its own. */
+.dt-th {
+  position: sticky;
+  top: 0;
+  z-index: var(--dt-z-sticky-header);
+  background: var(--surface-raised);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.dt-cell-sticky {
+  position: sticky;
+  z-index: var(--dt-z-sticky-cell);
+  background: var(--surface-raised);
+}
+
+/* The corner cell is sticky in both axes, so it has to sit above both planes. */
+.dt-th.dt-cell-sticky {
+  z-index: var(--dt-z-sticky-corner);
+}
+
+.dt-table[data-zebra='true'] .dt-row:nth-child(4n + 3) .dt-cell-sticky {
+  background: var(--dt-row-zebra);
+}
+
+/* Same specificity problem, same explicit fix, for the sticky cells that paint their
+   own opaque background. */
+.dt-row:hover .dt-cell-sticky,
+.dt-row:focus-within .dt-cell-sticky,
+.dt-table[data-zebra='true'] .dt-row:nth-child(4n + 3):hover .dt-cell-sticky,
+.dt-table[data-zebra='true'] .dt-row:nth-child(4n + 3):focus-within .dt-cell-sticky {
+  background: var(--dt-row-hover);
+}
+
+/* The expand-toggle column. Sticky at left 0 and the origin of the left prefix sums,
+   so it has to paint an opaque background and re-apply hover for the same reason every
+   other sticky cell does. */
+.dt-cell-expand {
+  position: sticky;
+  left: 0;
+  z-index: var(--dt-z-sticky-cell);
+  background: var(--surface-raised);
+}
+.dt-th.dt-cell-expand {
+  z-index: var(--dt-z-sticky-corner);
+}
+.dt-table[data-zebra='true'] .dt-row:nth-child(4n + 3) .dt-cell-expand {
+  background: var(--dt-row-zebra);
+}
+.dt-row:hover .dt-cell-expand,
+.dt-row:focus-within .dt-cell-expand,
+.dt-table[data-zebra='true'] .dt-row:nth-child(4n + 3):hover .dt-cell-expand,
+.dt-table[data-zebra='true'] .dt-row:nth-child(4n + 3):focus-within .dt-cell-expand {
+  background: var(--dt-row-hover);
+}
+
+/* ── 4 · THE SCROLL SHADOW ────────────────────────────────────────────────────
+   Driven by data attributes the IntersectionObserver sets, so nothing runs per frame.
+   `clip-path` lets the shadow escape sideways only, so it does not smear over the
+   row's own top and bottom rules. */
+.dt-cell-sticky-last-left,
+.dt-cell-sticky-first-right {
+  transition: box-shadow 150ms linear;
+}
+
+.dt-scroller[data-scrolled='true'] .dt-cell-sticky-last-left {
+  box-shadow:
+    inset 0 -1px 0 var(--border-subtle),
+    8px 0 12px -6px color-mix(in oklab, var(--ink) 18%, transparent);
+  clip-path: inset(0 -16px 0 0);
+}
+
+.dt-scroller[data-scrolled-end='true'] .dt-cell-sticky-first-right {
+  box-shadow:
+    inset 0 -1px 0 var(--border-subtle),
+    -8px 0 12px -6px color-mix(in oklab, var(--ink) 18%, transparent);
+  clip-path: inset(0 0 0 -16px);
+}
+
+/* ── 5 · ROWS ─────────────────────────────────────────────────────────────────── */
+.dt-row {
+  transition: background-color 120ms linear;
+}
+
+.dt-table[data-zebra='true'] .dt-row:nth-child(4n + 3) {
+  background: var(--dt-row-zebra);
+}
+
+/* The zebra-hover combination is spelled out, and it has to be.
+   Source order is not enough: the zebra selector
+   (`.dt-table[data-zebra] .dt-row:nth-child(...)`) is MORE SPECIFIC than `.dt-row:hover`,
+   so it won regardless of order and hovering a striped row did nothing visible.
+   Measured: a striped row reported the same background hovered and un-hovered. */
+.dt-row:hover,
+.dt-row:focus-within,
+.dt-table[data-zebra='true'] .dt-row:nth-child(4n + 3):hover,
+.dt-table[data-zebra='true'] .dt-row:nth-child(4n + 3):focus-within {
+  background: var(--dt-row-hover);
+}
+
+/* The whole row is the expand target when the caller wires `onRowClick`. */
+.dt-row[data-clickable='true'] {
+  cursor: pointer;
+}
+
+/* ── 6 · THE EXPAND TRANSITION: grid-template-rows 0fr to 1fr ─────────────────
+   Chosen over two alternatives:
+
+   - Measured `max-height` px plus a ResizeObserver: widest support, but it needs an
+     observer per expanded row purely to track the height change that `1fr` handles
+     for free, and re-measurement on every content mutation. The on-demand mode goes
+     skeleton -> real content while the row may still be animating, and `1fr` simply
+     reflows. That case is exactly what this brief cares about.
+   - `interpolate-size: allow-keywords` with `height: auto`: the cleanest syntax, but
+     Chromium-only, so shipping it means two code paths and two sets of visual bugs.
+     It is the future simplification once it is Baseline.
+
+   The animation shell is ALWAYS MOUNTED and only the content is lazy. Because
+   `.dt-detail-grid` already exists with a computed `0fr`, flipping `data-state` on the
+   first expand transitions correctly with no double requestAnimationFrame and no
+   forced-reflow hack. First-expand glitches are the number one bug in hand-rolled
+   accordions, and this removes the cause structurally rather than working around it. */
+.dt-detail-row > .dt-detail-cell {
+  /* Padding is NOT in the animated track: it would leave a visible stub when closed. */
+  padding: 0;
+  /* Borders live on .dt-detail-inner so they collapse with the content. */
+  box-shadow: none;
+  background: var(--surface-subtle);
+}
+
+.dt-detail-grid {
+  /* The component's own motion, deliberately NOT read from the shared brand tokens: a
+     table's internal timing is not a brand decision, and depending on that layer meant an
+     undefined custom property would invalidate the whole `transition` declaration and
+     silently delete this animation wherever the component was copied to.
+
+     Tuned against the real panel rather than by eye. A row of ten bookings is ~570px, and
+     at the previous 220ms on an ease-out curve it covered 55% of that in the first 90ms,
+     which reads as a pop followed by a slow settle rather than as one movement. A longer
+     duration on a curve that eases in AND out spreads the distance evenly. */
+  --dt-open-duration: 370ms;
+  --dt-open-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dt-close-duration: 320ms;
+  --dt-close-ease: cubic-bezier(0.4, 0, 1, 1);
+  --dt-empty-open-duration: 300ms;
+  --dt-empty-close-duration: 220ms;
+  /* How far the panel travels. Big enough that the eye tracks the content itself and
+     not just the edge of the clip, which is the difference between "the row got taller"
+     and "the panel slid open". */
+  --dt-slide-distance: 1.25rem;
+
+  display: grid;
+  grid-template-rows: 0fr;
+  /* Closing runs shorter and accelerates: a collapse that eases out reads as hesitant. */
+  transition: grid-template-rows var(--dt-close-duration) var(--dt-close-ease);
+}
+
+/* A one-line empty state has little distance to travel, so the full panel timing reads
+   as a pause. Content rows keep the longer timing that suits their greater height. */
+.dt-detail-grid[data-empty='true'] {
+  --dt-open-duration: var(--dt-empty-open-duration);
+  --dt-close-duration: var(--dt-empty-close-duration);
+}
+
+.dt-detail-grid[data-state='open'] {
+  grid-template-rows: 1fr;
+  /* Opening runs longer and decelerates, so the row settles rather than snapping. */
+  transition: grid-template-rows var(--dt-open-duration) var(--dt-open-ease);
+}
+
+/* The content is staged AGAINST the box rather than fading in lockstep with it, which
+   is what stops the two reading as one mushy resize. Opening, it is held back briefly
+   and lands as the box finishes; closing, it clears out first and the box then
+   collapses into empty space. Both properties composite. */
+.dt-detail-content {
+  opacity: 0;
+  transform: translateY(calc(var(--dt-slide-distance) * -1));
+  transition:
+    opacity 140ms linear,
+    transform var(--dt-close-duration) var(--dt-close-ease);
+}
+
+/* The slide runs for the FULL duration of the box, in step with it, so the content
+   travels down out of the parent row rather than being uncovered in place. The fade is
+   shorter and lands early, because content that is still fading while it stops moving
+   reads as sluggish. */
+.dt-detail-grid[data-state='open'] > .dt-detail-inner > .dt-detail-content {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 200ms linear 40ms,
+    transform var(--dt-open-duration) var(--dt-open-ease);
+}
+
+/* REQUIRED, and on the CHILD. A grid item defaults to `min-height: auto` and refuses
+   to shrink below its content, so without this the track never actually reaches 0fr
+   and the row keeps its full height while fading. */
+.dt-detail-grid > .dt-detail-inner {
+  min-height: 0;
+  overflow: hidden;
+  /* A nested table's layout cannot invalidate the parent table's. */
+  contain: layout paint style;
+}
+
+/* Open-only separator, so a collapsed detail row is geometrically zero-height. */
+.dt-detail-grid[data-state='open'] > .dt-detail-inner {
+  box-shadow: inset 0 1px 0 var(--border-subtle);
+}
+
+/* ── 7 · SKELETON SHIMMER ─────────────────────────────────────────────────────
+   A background-position sweep rather than an opacity pulse: it reads as content
+   streaming in rather than something blinking, and it animates a single
+   compositor-friendly property. */
+.dt-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    var(--surface-sunken) 0%,
+    color-mix(in oklab, var(--surface-sunken) 55%, var(--surface-raised)) 50%,
+    var(--surface-sunken) 100%
+  );
+  background-size: 200% 100%;
+  animation: dt-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes dt-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+/* ── 8 · FOCUS RINGS INSIDE THE SCROLLER ──────────────────────────────────────
+   `overflow: auto` on the scroller CLIPS `outline`, so a control near the edge of a
+   wide table would show a half-drawn ring. An inset box-shadow ring is drawn inside
+   the element's own box and cannot be clipped. */
+.dt-focus-ring:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+
+/* ── 9 · REDUCED MOTION ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .dt-detail-grid,
+  .dt-detail-grid[data-state='open'],
+  .dt-detail-content,
+  .dt-detail-grid[data-state='open'] > .dt-detail-inner > .dt-detail-content {
+    transition-duration: 1ms;
+    transition-delay: 0ms;
+  }
+  .dt-shimmer {
+    animation: none;
+  }
+  .dt-row,
+  .dt-cell-sticky-last-left,
+  .dt-cell-sticky-first-right {
+    transition: none;
+  }
+}

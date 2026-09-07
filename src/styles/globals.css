@@ -1,0 +1,7 @@
+/* The single stylesheet, imported once in _app.tsx. Order is load-bearing: Tailwind
+   first so its `@theme` machinery exists, then the portable token layer that extends
+   it, then base, then the DataTable's own stylesheet (which consumes the tokens). */
+@import 'tailwindcss';
+@import './crux-tokens.css';
+@import './base.css';
+@import '../components/DataTable/dataTable.css';

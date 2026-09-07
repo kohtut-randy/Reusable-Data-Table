@@ -1,0 +1,74 @@
+html {
+  /* The dashboard is a denser product surface than the landing page, so the root size
+     is fixed rather than fluid: a fluid root would make table rows and control heights
+     drift between laptop sizes, and a data table wants predictable density. */
+  background: var(--surface);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Tailwind v4 removed `cursor: pointer` from its button preflight, so every button in
+   the app rendered with a default arrow. Restored here, once, rather than as a
+   `cursor-pointer` class on each component: a per-component class is something the next
+   control added to the codebase will forget. Disabled controls get `not-allowed` so the
+   affordance matches the state. */
+button:not(:disabled),
+select:not(:disabled),
+summary,
+label[for],
+[role='button']:not([aria-disabled='true']),
+[role='menuitem']:not(:disabled),
+[role='link']:not([aria-disabled='true']),
+a[href] {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+/* The one utility Tailwind does not ship that this app needs in several places. */
+@utility sr-only-focusable {
+  &:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
