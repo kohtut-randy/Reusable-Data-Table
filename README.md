@@ -1,8 +1,8 @@
-#  Dynamic Timetable
+# Reusable Data Table
 
-A staff dashboard for a fictional bouldering gym, built around one component: a generic,
-typed `DataTable` with **no table or grid library**. Sorting, pagination, expandable rows,
-sticky columns, and loading/empty/error states are all hand-built.
+A staff dashboard for a fictional bouldering gym, built around one reusable component: a
+generic, typed `DataTable` with **no table or grid library**. Sorting, pagination,
+expandable rows, sticky columns, and loading/empty/error states are all hand-built.
 
 Next.js 16 (Pages Router) + React 19 + TypeScript + Tailwind v4 + yup.
 
@@ -24,7 +24,7 @@ Other scripts: `npm run build` / `npm start` (production), `npm run lint`,
 ## Pages
 
 | Route      | Table mode                             | Expansion                             |
-| ---------- | -------------------------------------- | ------------------------------------- |
+| ---------- | --------------------------------------- | -------------------------------------- |
 | `/`        | Client sort & pagination               | Inline child rows                     |
 | `/payouts` | Server sort & pagination               | On-demand (lazy-fetched) nested table |
 | `/members` | Server sort & pagination               | None                                  |
@@ -75,7 +75,7 @@ independent of whether state is controlled (`sort`/`onSortChange`) or uncontroll
 (`defaultSort`).
 
 |              | client                                 | server                          |
-| ------------ | -------------------------------------- | ------------------------------- |
+| ------------ | --------------------------------------- | -------------------------------- |
 | uncontrolled | plain local table                      | table owns state, caller reacts |
 | controlled   | page owns sort, data stays local (`/`) | `/payouts`, `/members`          |
 
@@ -176,13 +176,16 @@ style recalcs at 25 rendered rows and 20 at 100, essentially flat. Pagination bo
 rendered rows regardless of dataset size, so no virtualization is needed, which also
 avoids fighting expanded rows of unknown animating height.
 
-## Reduced motion
+## Note for reviewers: macOS "Reduce Motion"
 
-Motion is keyed off `<html data-motion-mode>`, set in `_document` before first paint.
-**The OS `prefers-reduced-motion` setting is intentionally ignored for this demo**, since
-the expand transition and shimmer are assessed features. `?motion=reduce` opts into the
-reduced build, which is fully implemented. Honouring the OS preference is a one-line
-change in `_document`.
+If **System Settings → Accessibility → Display → Reduce Motion** is on, Safari and
+Chrome on macOS can suppress some CSS transitions and throttle or skip scroll-linked
+effects at the browser/OS level — separately from this site's own reduced-motion
+handling, which is off by default (see Assumptions below). This can make the motion
+look muted or missing even though nothing is broken.
+
+To see the full experience, turn Reduce Motion off before reviewing, or visit with
+`?motion=reduce` if you'd rather review the intentionally reduced path instead.
 
 ## Tradeoffs & assumptions
 
