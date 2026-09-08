@@ -46,12 +46,6 @@ export const TimetableSimulateStates = ({ flags, onChange }: TimetableSimulateSt
           description='Returns 500, showing the table error state and Retry'
         />
         <Switch
-          checked={flags.failChildren}
-          onChange={value => set('failChildren', value)}
-          label='Fail child requests'
-          description='Expand a row: the error is scoped to that row'
-        />
-        <Switch
           checked={flags.emptyList}
           onChange={value => set('emptyList', value)}
           label='Empty dataset'
