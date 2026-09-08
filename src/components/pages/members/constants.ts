@@ -1,4 +1,4 @@
-export const MEMBERS_CAPTION = 'Members of CRUX Bristol'
+export const MEMBERS_CAPTION = 'Members of Dynamic Table Bristol'
 export const MEMBERS_NOUN = 'members'
 
 export const MEMBERS_COLUMN_ID = {

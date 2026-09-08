@@ -29,7 +29,7 @@ export const Topbar = ({ breadcrumb, onOpenNav }: TopbarProps) => {
 
       <nav aria-label='Breadcrumb' className='min-w-0'>
         <ol className='flex items-center gap-1.5 text-[0.8125rem] text-ink-muted'>
-          <li>CRUX Bristol</li>
+          <li>Dynamic Table</li>
           <li aria-hidden='true'>/</li>
           <li className='truncate font-medium text-ink' aria-current='page'>
             {breadcrumb}

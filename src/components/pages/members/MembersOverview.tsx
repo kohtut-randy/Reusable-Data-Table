@@ -5,7 +5,7 @@ import { MembersCard } from './components'
    standard module shape. */
 export const MembersOverview = () => (
   <>
-    <PageMeta title='Members' description='The CRUX Bristol membership roster.' />
+    <PageMeta title='Members' description='The DT Bristol membership roster.' />
 
     <PageHeader
       title='Members'

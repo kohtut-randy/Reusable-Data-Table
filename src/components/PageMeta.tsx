@@ -6,7 +6,7 @@ export type PageMetaProps = {
   description: string
 }
 
-const TITLE_SUFFIX = 'CRUX Staff'
+const TITLE_SUFFIX = 'DT Staff'
 
 /* Every route sets its own title and description through this one component.
  *

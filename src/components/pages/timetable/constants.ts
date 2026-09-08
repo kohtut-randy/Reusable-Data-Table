@@ -1,4 +1,4 @@
-export const TIMETABLE_CAPTION = 'Classes on the CRUX Bristol schedule'
+export const TIMETABLE_CAPTION = 'Classes on the DT Bristol schedule'
 export const TIMETABLE_NOUN = 'classes'
 
 /** Column ids, referenced by the column definitions and by the default sort. */
